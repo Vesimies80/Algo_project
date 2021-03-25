@@ -19,12 +19,9 @@ Type random_in_range(Type start, Type end)
     return static_cast<Type>(start+num);
 }
 
-// Modify the code below to implement the functionality of the class.
-// Also remove comments from the parameter names when you implement
-// an operation (Commenting out parameter name prevents compiler from
-// warning about unused parameters on operations you haven't yet implemented.)
-
-Datastructures::Datastructures()
+Datastructures::Datastructures():
+    id_datastructure_({}),
+    data_changed_(true)
 {
     // Replace this comment with your implementation
 }
@@ -36,37 +33,55 @@ Datastructures::~Datastructures()
 
 int Datastructures::place_count()
 {
-    // Replace this comment with your implementation
-    return 0;
+    int size = id_datastructure_.size();
+    return size;
 }
 
 void Datastructures::clear_all()
 {
-    // Replace this comment with your implementation
+    id_datastructure_.clear();
+    flag_updator(true);
 }
 
 std::vector<PlaceID> Datastructures::all_places()
 {
-    // Replace this comment with your implementation
-    return {};
+    std::vector<PlaceID> all_place {};
+    for( auto iter = id_datastructure_.begin(); iter != id_datastructure_.end(); ++iter )
+    {
+        all_place.push_back(iter->first);
+    }
+    return all_place;
 }
 
 bool Datastructures::add_place(PlaceID id, const Name& name, PlaceType type, Coord xy)
 {
-    // Replace this comment with your implementation
-    return false;
+    std::shared_ptr<Place> new_place = std::make_shared<Place>(id, name, type, xy);
+    bool value = id_datastructure_.insert({id, new_place}).second;
+    flag_updator(true);
+    return value;
 }
 
 std::pair<Name, PlaceType> Datastructures::get_place_name_type(PlaceID id)
 {
-    // Replace this comment with your implementation
-    return {NO_NAME, PlaceType::NO_TYPE};
+    auto iterator = id_datastructure_.find(id);
+    if( iterator == id_datastructure_.end() )
+    {
+        return {NO_NAME, PlaceType::NO_TYPE};
+    } else {
+        auto place = iterator->second;
+        return {place->name, place->type};
+    }
 }
 
 Coord Datastructures::get_place_coord(PlaceID id)
 {
-    // Replace this comment with your implementation
-    return NO_COORD;
+    auto iterator = id_datastructure_.find(id);
+    if( iterator == id_datastructure_.end() ){
+        return NO_COORD;
+    } else {
+        auto place = iterator->second;
+        return place->coordinate;
+    }
 }
 
 bool Datastructures::add_area(AreaID id, const Name &name, std::vector<Coord> coords)
@@ -97,14 +112,42 @@ void Datastructures::creation_finished()
 
 std::vector<PlaceID> Datastructures::places_alphabetically()
 {
-    // Replace this comment with your implementation
-    return {};
+    if ( data_changed_)
+    {
+        std::multimap<Name, std::shared_ptr<Place>> map_of_names;
+        name_ordered_places_ = {};
+        for( auto iter = id_datastructure_.begin(); iter != id_datastructure_.end(); ++iter )
+        {
+            auto place = iter->second;
+            map_of_names.insert({place->name, place});
+        }
+        for (auto iter = map_of_names.begin(); iter != map_of_names.end(); ++iter)
+        {
+            name_ordered_places_.push_back(iter->second->id);
+        }
+    }
+    flag_updator(false);
+    return name_ordered_places_;
 }
 
 std::vector<PlaceID> Datastructures::places_coord_order()
 {
-    // Replace this comment with your implementation
-    return {};
+    if ( data_changed_)
+    {
+        std::multimap<Coord, std::shared_ptr<Place>> map_of_names;
+        coord_ordered_places_ = {};
+        for( auto iter = id_datastructure_.begin(); iter != id_datastructure_.end(); ++iter )
+        {
+            auto place = iter->second;
+            map_of_names.insert({place->coordinate, place});
+        }
+        for (auto iter = map_of_names.begin(); iter != map_of_names.end(); ++iter)
+        {
+            coord_ordered_places_.push_back(iter->second->id);
+        }
+    }
+    flag_updator(false);
+    return coord_ordered_places_;
 }
 
 std::vector<PlaceID> Datastructures::find_places_name(Name const& name)
@@ -171,4 +214,14 @@ AreaID Datastructures::common_area_of_subareas(AreaID id1, AreaID id2)
 {
     // Replace this comment with your implementation
     return NO_AREA;
+}
+
+void Datastructures::flag_updator(bool data)
+{
+    data_changed_ = data;
+}
+
+double calculate_eucledean(Coord coord)
+{
+    return std::sqrt(std::pow(coord.x, 2) + std::pow(coord.y, 2));
 }

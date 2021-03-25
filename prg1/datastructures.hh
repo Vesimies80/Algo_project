@@ -9,6 +9,10 @@
 #include <utility>
 #include <limits>
 #include <functional>
+#include <unordered_map>
+#include <memory>
+#include <map>
+#include <math.h>
 
 // Types for IDs
 using PlaceID = long int;
@@ -56,13 +60,29 @@ struct CoordHash
     }
 };
 
-// Example: Defining < for Coord so that it can be used
-// as key for std::map/set
+struct Place {
+    Place(PlaceID id, Name name, PlaceType type, Coord coordinate):
+        id(id),
+        name(name),
+        type(type),
+        coordinate(coordinate)
+    {}
+    PlaceID id;
+    Name name;
+    PlaceType type;
+    Coord coordinate;
+};
+
+double calculate_eucledean(Coord coord);
+
 inline bool operator<(Coord c1, Coord c2)
 {
-    if (c1.y < c2.y) { return true; }
-    else if (c2.y < c1.y) { return false; }
-    else { return c1.x < c2.x; }
+    double c1_eucledean = calculate_eucledean(c1);
+    double c2_eucledean = calculate_eucledean(c2);
+    if ( c1_eucledean < c2_eucledean) { return true; }
+    else if( c1_eucledean > c2_eucledean) {return false; }
+    else if (c1.y < c2.y) { return true; }
+    else { return false; }
 }
 
 // Return value for cases where coordinates were not found
@@ -74,8 +94,6 @@ using Distance = int;
 // Return value for cases where Duration is unknown
 Distance const NO_DISTANCE = NO_VALUE;
 
-
-
 // This is the class you are supposed to implement
 
 class Datastructures
@@ -84,8 +102,6 @@ public:
     Datastructures();
     ~Datastructures();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
     int place_count();
 
     // Estimate of performance:
@@ -183,8 +199,12 @@ public:
     AreaID common_area_of_subareas(AreaID id1, AreaID id2);
 
 private:
-    // Add stuff needed for your class implementation here
 
+    void flag_updator (bool data);
+    std::unordered_map<PlaceID, std::shared_ptr<Place>> id_datastructure_{};
+    bool data_changed_;
+    std::vector<PlaceID> name_ordered_places_;
+    std::vector<PlaceID> coord_ordered_places_;
 };
 
 #endif // DATASTRUCTURES_HH
