@@ -13,10 +13,12 @@
 #include <memory>
 #include <map>
 #include <math.h>
+#include <deque>
+#include <algorithm>
 
 // Types for IDs
-using PlaceID = long int;
-using AreaID = long int;
+using PlaceID = long long int;
+using AreaID = long long int;
 using Name = std::string;
 using WayID = std::string;
 
@@ -73,6 +75,21 @@ struct Place {
     Coord coordinate;
 };
 
+struct Area {
+    Area(AreaID id, Name name, std::vector<Coord> coordinates):
+        id(id),
+        name(name),
+        coordinates(coordinates),
+        parent(nullptr),
+        children({})
+    {}
+    AreaID id;
+    Name name;
+    std::vector<Coord> coordinates;
+    std::shared_ptr<Area> parent;
+    std::vector<std::weak_ptr<Area>> children;
+};
+
 double calculate_eucledean(Coord coord);
 
 inline bool operator<(Coord c1, Coord c2)
@@ -104,105 +121,131 @@ public:
 
     int place_count();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: Based on cppreference std::clear is linear in all cases
     void clear_all();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: Based on cppreference std::push_back is an amortized constant
+    // and I loop through all items in id_datastructure causing n in the performance
     std::vector<PlaceID> all_places();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n) average is a constant
+    // Short rationale for estimate: Based on cppreference the average case of std::insert
+    // is constant but the worst case is linear for an unordered_map
     bool add_place(PlaceID id, Name const& name, PlaceType type, Coord xy);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n) average is a constant
+    // Short rationale for estimate: Based on cppreference the average case of std::find is constant
+    // but the worst case is linear std::end is constant
     std::pair<Name, PlaceType> get_place_name_type(PlaceID id);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n) average is a constant
+    // Short rationale for estimate: The average case of std::find is constant and worst case is linear
     Coord get_place_coord(PlaceID id);
 
     // We recommend you implement the operations below only after implementing the ones above
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n log(n))
+    // Short rationale for estimate: Based on cppreference std::insert for a multimap is always log(n)
+    // and looping over the datastructure causes performance to be n log(n) and push_back is an
+    // amortized constant
     std::vector<PlaceID> places_alphabetically();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n log(n))
+    // Short rationale for estimate: Std::insert for a multimap is always log(n)
+    // and looping over the datastructure causes performance to be n log(n) and push_back is an
+    // amortized constant
     std::vector<PlaceID> places_coord_order();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n) average is amount of same named places
+    // Short rationale for estimate: Based on cppreference std::equal_range is on average linear in number
+    // of elements with the key, worst case is linear in the size of the container. Push_back is constant
     std::vector<PlaceID> find_places_name(Name const& name);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n) average is amount of same named places
+    // Short rationale for estimate: Std::equal_range is on average linear in number
+    // of elements with the key, worst case is linear in the size of the container. Push_back is constant
     std::vector<PlaceID> find_places_type(PlaceType type);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: Std::find and equal_range are worst case linear. std::extract is based
+    // on cppreference worstcase linear and average constant. But since its only done once
+    // even though its in a for loop the performance is still O(n)
     bool change_place_name(PlaceID id, Name const& newname);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n) average is a constant
+    // Short rationale for estimate: std::find is on average a constant but worst case its linear
     bool change_place_coord(PlaceID id, Coord newcoord);
 
     // We recommend you implement the operations below only after implementing the ones above
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n) average is constant
+    // Short rationale for estimate: std::insert for an unordered_map is on average constant but
+    // worst case its linear
     bool add_area(AreaID id, Name const& name, std::vector<Coord> coords);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n) average is a constant
+    // Short rationale for estimate: The average case of std::find is constant
+    // but the worst case is linear std::end is constant
     Name get_area_name(AreaID id);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n) average is a constant
+    // Short rationale for estimate: Based on cppreference the average case of std::find is constant
+    // but the worst case is linear std::end is constant
     std::vector<Coord> get_area_coords(AreaID id);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: std::push_back for a vector is constant the loop causes the n
     std::vector<AreaID> all_areas();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n) average is a constant
+    // Short rationale for estimate:The average case of std::find is constant
+    // but the worst case is linear
     bool add_subarea_to_area(AreaID id, AreaID parentid);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n) average is a constant
+    // Short rationale for estimate:The average case of std::find is constant
+    // but the worst case is linear also push_back for a vector is constant
     std::vector<AreaID> subarea_in_areas(AreaID id);
 
     // Non-compulsory operations
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: Unused O(1)
+    // Short rationale for estimate: Unused
     void creation_finished();
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: get_children is linear where in the worst case n is the container size
+    //  and std::find is still worst case linear and average constant
     std::vector<AreaID> all_subareas_in_area(AreaID id);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: Equal_range is worst case linear to container size but on average
+    // its linear to amount of members with the same key. All other operations are constant
     std::vector<PlaceID> places_closest_to(Coord xy, PlaceType type);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n) on average linear to amount of element with the key
+    // Short rationale for estimate: Worst case is linear but since find and erase are on average constant
+    // and equal_range causes the for loops to be the same size as equal_range which is on average
+    // the amount of members with the same key
     bool remove_place(PlaceID id);
 
-    // Estimate of performance:
-    // Short rationale for estimate:
+    // Estimate of performance: O(n)
+    // Short rationale for estimate: std::mismatch is the only function not explained before and
+    // based on cppreference its at most the size of the 2 containers combined
     AreaID common_area_of_subareas(AreaID id1, AreaID id2);
 
 private:
-
-    void flag_updator (bool data);
-    std::unordered_map<PlaceID, std::shared_ptr<Place>> id_datastructure_{};
-    bool data_changed_;
+    // Estimate of performance: O(n)
+    // get_children is linear where in the worst case n is the container size
+    std::vector<AreaID> get_children(std::shared_ptr<Area> Area);
+    std::unordered_map<PlaceID, std::shared_ptr<Place>> id_datastructure_;
+    std::unordered_multimap<Name, std::shared_ptr<Place>> name_datastructure_;
+    std::unordered_multimap<PlaceType, std::shared_ptr<Place>> type_datastructure_;
+    std::unordered_map<AreaID, std::shared_ptr<Area>> id_areastructure_;
+    bool coord_changed_;
+    bool name_changed_;
     std::vector<PlaceID> name_ordered_places_;
     std::vector<PlaceID> coord_ordered_places_;
 };
